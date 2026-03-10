@@ -4,14 +4,14 @@ from pydantic import BaseModel
 from typing import Optional
 
 class ReviewCreate(BaseModel):
-    job_id: UUID
+    job_id: Optional[UUID] = None
     reviewee_id: UUID
     rating: int  # 1-5
     comment: Optional[str] = None
 
 class Review(BaseModel):
     id: UUID
-    job_id: UUID
+    job_id: Optional[UUID] = None
     reviewer_id: UUID
     reviewee_id: UUID
     rating: int

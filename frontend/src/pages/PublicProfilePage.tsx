@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { usersApi } from '@/api/users'
 import { reviewsApi } from '@/api/reviews'
 import { portfolioApi } from '@/api/portfolio'
@@ -8,14 +8,17 @@ import { chatApi } from '@/api/chat'
 import { useAuthStore } from '@/stores/authStore'
 import { PortfolioGrid } from '@/components/portfolio/PortfolioGrid'
 import { ReviewList } from '@/components/reviews/ReviewList'
+import { CreateReviewModal } from '@/components/reviews/CreateReviewModal'
 import { StarRating } from '@/components/reviews/StarRating'
-import { Loader2, Calendar, AlertCircle, MessageCircle, Briefcase, Image } from 'lucide-react'
+import { Loader2, Calendar, AlertCircle, MessageCircle, Briefcase, Image, Star } from 'lucide-react'
 
 export default function PublicProfilePage() {
     const { userId } = useParams<{ userId: string }>()
     const navigate = useNavigate()
+    const queryClient = useQueryClient()
     const { user: currentUser } = useAuthStore()
     const [isStartingChat, setIsStartingChat] = useState(false)
+    const [showReviewModal, setShowReviewModal] = useState(false)
 
     const handleMessage = async () => {
         if (!currentUser || !userId) return
@@ -106,7 +109,6 @@ export default function PublicProfilePage() {
                                     {displayName.charAt(0).toUpperCase()}
                                 </div>
                             )}
-                            {/* Online indicator could go here */}
                         </div>
 
                         <div className="flex-1 space-y-4 pt-8 md:pt-12">
@@ -141,7 +143,7 @@ export default function PublicProfilePage() {
 
                             {/* Action Buttons */}
                             {currentUser?.id !== userProfile.id && (
-                                <div className="pt-3">
+                                <div className="pt-3 flex gap-3">
                                     <button
                                         onClick={handleMessage}
                                         disabled={isStartingChat}
@@ -153,6 +155,13 @@ export default function PublicProfilePage() {
                                             <MessageCircle className="w-4 h-4 transition-transform duration-200 group-hover:scale-110" />
                                         )}
                                         Send Message
+                                    </button>
+                                    <button
+                                        onClick={() => setShowReviewModal(true)}
+                                        className="px-4 py-2 rounded-xl font-medium text-sm text-white bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 flex items-center gap-2 transition-all shadow-md hover:shadow-lg shadow-orange-500/20 group"
+                                    >
+                                        <Star className="w-4 h-4 transition-transform duration-200 group-hover:scale-110" />
+                                        Leave Review
                                     </button>
                                 </div>
                             )}
@@ -210,10 +219,24 @@ export default function PublicProfilePage() {
                             <Briefcase className="w-7 h-7 text-gray-400 dark:text-gray-500" />
                         </div>
                         <p className="text-gray-500 dark:text-gray-400 font-medium">No reviews yet</p>
-                        <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">This user hasn't received any reviews from completed gigs.</p>
+                        <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Be the first to leave a review!</p>
                     </div>
                 )}
             </div>
+
+            {/* Review Modal */}
+            {userId && (
+                <CreateReviewModal
+                    isOpen={showReviewModal}
+                    onClose={() => setShowReviewModal(false)}
+                    onSuccess={() => {
+                        queryClient.invalidateQueries({ queryKey: ['userReviews', userId] })
+                        queryClient.invalidateQueries({ queryKey: ['userStats', userId] })
+                    }}
+                    revieweeId={userId}
+                    revieweeName={displayName}
+                />
+            )}
         </div>
     )
 }

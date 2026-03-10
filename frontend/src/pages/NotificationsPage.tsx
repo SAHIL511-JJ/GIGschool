@@ -11,6 +11,16 @@ export default function NotificationsPage() {
     const navigate = useNavigate()
     const queryClient = useQueryClient()
     const [startingChatWith, setStartingChatWith] = useState<string | null>(null)
+    const [expandedPitches, setExpandedPitches] = useState<Set<string>>(new Set())
+
+    const togglePitch = (appId: string) => {
+        setExpandedPitches(prev => {
+            const next = new Set(prev)
+            if (next.has(appId)) next.delete(appId)
+            else next.add(appId)
+            return next
+        })
+    }
 
     const { data: notifications, isLoading } = useQuery({
         queryKey: ['notifications', user?.id],
@@ -136,10 +146,17 @@ export default function NotificationsPage() {
             </div>
 
             {app.pitch && (
-                <div className="mb-3 p-3 bg-gray-100/50 dark:bg-gray-700/50 rounded-lg border-l-2 border-orange-300 dark:border-orange-600">
-                    <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 italic">
+                <div
+                    className="mb-3 p-3 bg-gray-100/50 dark:bg-gray-700/50 rounded-lg border-l-2 border-orange-300 dark:border-orange-600 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/70 transition-colors"
+                    onClick={() => togglePitch(app.id)}
+                    title={expandedPitches.has(app.id) ? 'Click to collapse' : 'Click to read full pitch'}
+                >
+                    <p className={`text-sm text-gray-600 dark:text-gray-300 italic ${expandedPitches.has(app.id) ? '' : 'line-clamp-2'}`}>
                         "{app.pitch}"
                     </p>
+                    {!expandedPitches.has(app.id) && app.pitch.length > 100 && (
+                        <span className="text-xs text-orange-500 dark:text-orange-400 font-medium mt-1 inline-block">Click to read more</span>
+                    )}
                 </div>
             )}
 

@@ -8,7 +8,8 @@ import { supabase } from '@/lib/supabase'
 import { JobDetailModal } from '@/components/jobs/JobDetailModal'
 import { PortfolioGrid } from '@/components/portfolio/PortfolioGrid'
 import { PortfolioUploader } from '@/components/portfolio/PortfolioUploader'
-import { User, Mail, Calendar, Edit2, Camera, Loader2, Check, X, Briefcase, Send, Eye, Bookmark, LayoutGrid, Plus, CheckCircle } from 'lucide-react'
+import { User, Mail, Calendar, Edit2, Camera, Loader2, Check, X, Briefcase, Send, Eye, Bookmark, LayoutGrid, Plus, CheckCircle, Sparkles } from 'lucide-react'
+import { aiApi } from '@/api/ai'
 
 export default function ProfilePage() {
     const { user, profile, refreshProfile } = useAuthStore()
@@ -20,6 +21,7 @@ export default function ProfilePage() {
     const [activeTab, setActiveTab] = useState<'gigs' | 'applications' | 'saved' | 'portfolio'>('gigs')
     const [selectedGig, setSelectedGig] = useState<Job | null>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
+    const [isGeneratingBio, setIsGeneratingBio] = useState(false)
 
     // Fetch user's posted gigs
     const { data: myGigs = [] } = useQuery<Job[]>({
@@ -163,9 +165,37 @@ export default function ProfilePage() {
                                                 value={bio}
                                                 onChange={(e) => setBio(e.target.value)}
                                                 className="input-clean text-sm w-full resize-none"
-                                                rows={2}
+                                                rows={5}
                                                 placeholder="Tell us about yourself..."
                                             />
+                                            <button
+                                                type="button"
+                                                onClick={async () => {
+                                                    const skillsArray = skills.split(',').map(s => s.trim()).filter(s => s)
+                                                    if (skillsArray.length === 0) {
+                                                        alert('Please add some skills first so AI can generate a bio!')
+                                                        return
+                                                    }
+                                                    setIsGeneratingBio(true)
+                                                    try {
+                                                        const result = await aiApi.generateBio(skillsArray, username)
+                                                        setBio(result.bio)
+                                                    } catch {
+                                                        alert('AI bio generation failed. Please try again.')
+                                                    } finally {
+                                                        setIsGeneratingBio(false)
+                                                    }
+                                                }}
+                                                disabled={isGeneratingBio}
+                                                className="mt-1.5 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/40 border border-purple-200 dark:border-purple-800 transition-all disabled:opacity-50"
+                                            >
+                                                {isGeneratingBio ? (
+                                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                ) : (
+                                                    <Sparkles className="w-3.5 h-3.5" />
+                                                )}
+                                                {isGeneratingBio ? 'Generating...' : 'Generate with AI'}
+                                            </button>
                                         </div>
                                         <div>
                                             <label className="text-xs font-semibold text-gray-500 uppercase">Skills (comma separated)</label>

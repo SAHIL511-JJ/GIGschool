@@ -3,9 +3,10 @@ import ReactMarkdown from 'react-markdown'
 import { useNavigate } from 'react-router-dom'
 import { Job, jobsApi, Application } from '@/api/jobs'
 import { chatApi } from '@/api/chat'
+import { aiApi } from '@/api/ai'
 import { useAuthStore } from '@/stores/authStore'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { X, User, Calendar, Tag, Trash2, CheckCircle, Loader2, Send, FileText, MessageCircle, Star } from 'lucide-react'
+import { X, User, Calendar, Tag, Trash2, CheckCircle, Loader2, Send, FileText, MessageCircle, Star, Sparkles } from 'lucide-react'
 import { CreateReviewModal } from '@/components/reviews/CreateReviewModal'
 
 interface JobDetailModalProps {
@@ -21,6 +22,7 @@ export function JobDetailModal({ job, isOpen, onClose }: JobDetailModalProps) {
     const [pitch, setPitch] = useState('')
     const [showApplyForm, setShowApplyForm] = useState(false)
     const [isStartingChat, setIsStartingChat] = useState(false)
+    const [isGeneratingPitch, setIsGeneratingPitch] = useState(false)
 
     // Review State
     const [showReviewModal, setShowReviewModal] = useState(false)
@@ -138,10 +140,10 @@ export function JobDetailModal({ job, isOpen, onClose }: JobDetailModalProps) {
 
                                 {/* Status badge */}
                                 <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${job.status === 'OPEN'
-                                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                                        : job.status === 'COMPLETED'
-                                            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                                            : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
+                                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                                    : job.status === 'COMPLETED'
+                                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                                        : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
                                     }`}>
                                     {job.status}
                                 </span>
@@ -227,8 +229,8 @@ export function JobDetailModal({ job, isOpen, onClose }: JobDetailModalProps) {
                                                 <p className="text-sm text-gray-700 dark:text-gray-300 mb-3 leading-relaxed">{app.pitch}</p>
                                                 <div className="flex items-center gap-2 flex-wrap">
                                                     <span className={`px-2 py-1 rounded-md text-xs font-semibold ${app.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                                                            app.status === 'ACCEPTED' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                                                                'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                                        app.status === 'ACCEPTED' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                                                            'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                                                         }`}>
                                                         {app.status}
                                                     </span>
@@ -277,15 +279,78 @@ export function JobDetailModal({ job, isOpen, onClose }: JobDetailModalProps) {
                     {/* Apply Form (for non-creators) */}
                     {!isCreator && showApplyForm && (
                         <div className="p-5 bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-800/10 rounded-xl border border-orange-200 dark:border-orange-900/30">
-                            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Your Pitch</h3>
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Your Pitch</h3>
+                                <button
+                                    type="button"
+                                    onClick={async () => {
+                                        if (!job || !user) return
+                                        setIsGeneratingPitch(true)
+                                        try {
+                                            const profile = useAuthStore.getState().profile
+                                            const result = await aiApi.generatePitch(
+                                                job.title,
+                                                job.description,
+                                                profile?.skills || [],
+                                                profile?.bio || ''
+                                            )
+                                            setPitch(result.pitch)
+                                        } catch {
+                                            alert('AI pitch generation failed. Please try again.')
+                                        } finally {
+                                            setIsGeneratingPitch(false)
+                                        }
+                                    }}
+                                    disabled={isGeneratingPitch}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/40 border border-purple-200 dark:border-purple-800 transition-all disabled:opacity-50"
+                                >
+                                    {isGeneratingPitch ? (
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    ) : (
+                                        <Sparkles className="w-3.5 h-3.5" />
+                                    )}
+                                    {isGeneratingPitch ? 'Writing...' : 'Write with AI'}
+                                </button>
+                            </div>
                             <textarea
                                 value={pitch}
                                 onChange={(e) => setPitch(e.target.value)}
-                                placeholder="Tell them why you're perfect for this gig..."
-                                className="input-clean resize-none mb-4"
-                                rows={4}
+                                placeholder="Write a short pitch or let AI write it for you..."
+                                className="input-clean resize-none mb-2"
+                                rows={8}
                                 required
                             />
+                            {pitch.trim().length >= 10 && (
+                                <button
+                                    type="button"
+                                    onClick={async () => {
+                                        if (!job) return
+                                        setIsGeneratingPitch(true)
+                                        try {
+                                            const result = await aiApi.generatePitch(
+                                                job.title,
+                                                job.description,
+                                                [],
+                                                `Enhance and polish this pitch while keeping the original meaning: "${pitch}"`
+                                            )
+                                            setPitch(result.pitch)
+                                        } catch {
+                                            alert('AI enhancement failed. Please try again.')
+                                        } finally {
+                                            setIsGeneratingPitch(false)
+                                        }
+                                    }}
+                                    disabled={isGeneratingPitch}
+                                    className="mb-4 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/40 border border-purple-200 dark:border-purple-800 transition-all disabled:opacity-50"
+                                >
+                                    {isGeneratingPitch ? (
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    ) : (
+                                        <Sparkles className="w-3.5 h-3.5" />
+                                    )}
+                                    {isGeneratingPitch ? 'Enhancing...' : '✨ Enhance with AI'}
+                                </button>
+                            )}
                             <div className="flex gap-3">
                                 <button
                                     onClick={() => applyMutation.mutate()}

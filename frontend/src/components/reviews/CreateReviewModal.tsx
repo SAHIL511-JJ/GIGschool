@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { StarRating } from './StarRating'
-import { Loader2, X, Star } from 'lucide-react'
+import { Loader2, X, Star, Sparkles } from 'lucide-react'
 import { reviewsApi } from '@/api/reviews'
+import { aiApi } from '@/api/ai'
 
 interface CreateReviewModalProps {
-    jobId: string
+    jobId?: string
     revieweeId: string
     revieweeName: string
     isOpen: boolean
@@ -16,6 +17,7 @@ export function CreateReviewModal({ jobId, revieweeId, revieweeName, isOpen, onC
     const [rating, setRating] = useState(0)
     const [comment, setComment] = useState('')
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [isGeneratingReview, setIsGeneratingReview] = useState(false)
     const [error, setError] = useState('')
 
     if (!isOpen) return null
@@ -32,11 +34,14 @@ export function CreateReviewModal({ jobId, revieweeId, revieweeName, isOpen, onC
 
         try {
             await reviewsApi.createReview({
-                job_id: jobId,
+                ...(jobId ? { job_id: jobId } : {}),
                 reviewee_id: revieweeId,
                 rating,
                 comment: comment.trim() || ''
             })
+            setRating(0)
+            setComment('')
+            setError('')
             onSuccess()
             onClose()
         } catch (err: any) {
@@ -111,8 +116,41 @@ export function CreateReviewModal({ jobId, revieweeId, revieweeName, isOpen, onC
                             value={comment}
                             onChange={(e) => setComment(e.target.value)}
                             className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400 transition-all duration-200 min-h-[120px] resize-none"
-                            placeholder="Share details about your experience working together..."
+                            placeholder="Write a short review and AI can enhance it..."
                         />
+                        {comment.trim().length >= 10 && (
+                            <button
+                                type="button"
+                                onClick={async () => {
+                                    if (rating === 0) {
+                                        setError('Please select a rating first')
+                                        return
+                                    }
+                                    setIsGeneratingReview(true)
+                                    setError('')
+                                    try {
+                                        const result = await aiApi.generateReview(
+                                            `Enhance and polish this review while keeping the original meaning: "${comment}"`,
+                                            rating
+                                        )
+                                        setComment(result.comment)
+                                    } catch {
+                                        setError('AI enhancement failed. Please try again.')
+                                    } finally {
+                                        setIsGeneratingReview(false)
+                                    }
+                                }}
+                                disabled={isGeneratingReview}
+                                className="mt-2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/40 border border-purple-200 dark:border-purple-800 transition-all disabled:opacity-50"
+                            >
+                                {isGeneratingReview ? (
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                    <Sparkles className="w-3 h-3" />
+                                )}
+                                {isGeneratingReview ? 'Enhancing...' : '✨ Enhance with AI'}
+                            </button>
+                        )}
                     </div>
 
                     {/* Error State */}

@@ -8,6 +8,7 @@ import SettingsPage from '@/pages/SettingsPage'
 import ChatPage from '@/pages/ChatPage'
 import NotificationsPage from '@/pages/NotificationsPage'
 import ProtectedRoute from '@/components/ProtectedRoute'
+import { AiHelperWidget } from '@/components/AiHelperWidget'
 import { useAuthStore } from '@/stores/authStore'
 import { JobBoard } from '@/components/jobs/JobBoard'
 import { LogOut, Briefcase, Home, User, Settings, MessageCircle, Bell } from 'lucide-react'
@@ -185,6 +186,7 @@ function App() {
           } />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        <AiHelperWidget />
       </BrowserRouter>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>

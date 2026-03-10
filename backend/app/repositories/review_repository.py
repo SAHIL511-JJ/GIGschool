@@ -10,7 +10,7 @@ class ReviewRepository:
     def create(self, review_in: ReviewCreate, reviewer_id: UUID) -> Review:
         data = review_in.model_dump()
         data["reviewer_id"] = str(reviewer_id)
-        data["job_id"] = str(data["job_id"])
+        data["job_id"] = str(data["job_id"]) if data.get("job_id") else None
         data["reviewee_id"] = str(data["reviewee_id"])
         
         response = self.supabase.table("reviews").insert(data).execute()

@@ -2,7 +2,7 @@ import { api } from './client'
 
 export interface Review {
     id: string
-    job_id: string
+    job_id?: string
     reviewer_id: string
     reviewee_id: string
     rating: number
@@ -11,7 +11,7 @@ export interface Review {
 }
 
 export interface ReviewCreate {
-    job_id: string
+    job_id?: string
     reviewee_id: string
     rating: number
     comment: string
