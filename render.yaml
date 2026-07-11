@@ -13,3 +13,9 @@ services:
         sync: false
       - key: PROJECT_NAME
         value: GigSchool
+      - key: SENTRY_DSN
+        sync: false
+      - key: SENTRY_ENVIRONMENT
+        value: production
+      - key: SENTRY_TRACES_SAMPLE_RATE
+        value: "1.0"

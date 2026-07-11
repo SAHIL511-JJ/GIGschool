@@ -9,6 +9,9 @@ class Settings(BaseSettings):
     SUPABASE_URL: str
     SUPABASE_KEY: str
     OPENROUTER_API_KEY: str = ""
+    SENTRY_DSN: str = ""
+    SENTRY_ENVIRONMENT: str = "development"
+    SENTRY_TRACES_SAMPLE_RATE: float = 1.0
     
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 
