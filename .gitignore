@@ -34,6 +34,7 @@ venv.bak/
 .env.local
 .env.production
 backend/TEST_ACCOUNTS.local.md
+backend/LOAD_TEST_ACCOUNTS.local.md
 
 # MacOS
 .DS_Store
