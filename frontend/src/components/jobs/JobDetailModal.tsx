@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import ReactMarkdown from 'react-markdown'
 import { useNavigate } from 'react-router-dom'
 import { Job, jobsApi, Application } from '@/api/jobs'
@@ -110,16 +111,21 @@ export function JobDetailModal({ job, isOpen, onClose }: JobDetailModalProps) {
 
     const creatorName = job.creator?.username || job.creator?.email?.split('@')[0] || 'Anonymous'
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    return createPortal(
+        <div
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Gig details: ${job.title}`}
+        >
             {/* Backdrop with blur */}
             <div
-                className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-backdrop"
+                className="absolute inset-0 z-0 bg-black/40 backdrop-blur-sm animate-backdrop"
                 onClick={onClose}
             />
 
             {/* Modal */}
-            <div className="relative w-full max-w-2xl max-h-[90vh] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 overflow-hidden animate-modal-in">
+            <div className="relative z-10 w-full max-w-2xl max-h-[90vh] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 overflow-hidden animate-modal-in">
                 {/* Header */}
                 <div className="p-6 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-white to-gray-50 dark:from-gray-800 dark:to-gray-800/80">
                     <div className="flex justify-between items-start">
@@ -470,6 +476,7 @@ export function JobDetailModal({ job, isOpen, onClose }: JobDetailModalProps) {
                     revieweeName={revieweeInfo.name}
                 />
             )}
-        </div>
+        </div>,
+        document.body
     )
 }
