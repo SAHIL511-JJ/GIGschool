@@ -25,3 +25,14 @@ CREATE POLICY "Users can view reviews"
 CREATE POLICY "Users can create reviews"
   ON public.reviews FOR INSERT
   WITH CHECK (auth.uid() = reviewer_id);
+
+-- Job board query indexes
+CREATE INDEX IF NOT EXISTS jobs_open_created_at_idx
+  ON public.jobs (created_at DESC)
+  WHERE status = 'OPEN';
+
+CREATE INDEX IF NOT EXISTS jobs_creator_created_at_idx
+  ON public.jobs (creator_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS jobs_group_created_at_idx
+  ON public.jobs (group_id, created_at DESC);

@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     SENTRY_DSN: str = ""
     SENTRY_ENVIRONMENT: str = "development"
     SENTRY_TRACES_SAMPLE_RATE: float = 1.0
+    JOB_LIST_CACHE_TTL_SECONDS: int = 30
     
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 
